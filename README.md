@@ -6,6 +6,8 @@
   - [Description](#description)
   - [Background](#background)
   - [Evaluation](#evaluation)
+- [Timeline](#timeline)
+- [Dataset Description](#dataset description)
 
 ## Overview
 
@@ -60,3 +62,43 @@ m_004d06,NCCc1ccc(O)cc1;CC(=O)Nc1ccc(O)cc1;OCC(O)CO
 Fewer than 25 guesses is allowed but there is no penalty for a wrong guess beyond the rank it occupies. A submission is rejected if it is missing the `molecule_id` or `smiles` column, is empty, contains null in either column, repeats a `molecule_id`, or gives more than 25 semicolon-separated guesses for any molecule.
 
 ## Timeline
+
+```mermaid
+timeline
+    title Competition Timeline
+    2026-09-14: Start Date
+    2026-12-07: Entry Deadline
+    2026-12-14: Final Submission Deadline
+```
+
+## Dataset Description
+This competition focuses on molecules that resemble those found in natural samples from plants, mammals, or microbes--confirmed natural products, hypothesised natural products, natural product analogs, and synthetic molecules that might plausibly occur in nature.  
+A molecule may have been measured several times at different collision energies or as different adducts.  
+**Predictions are made per molecules, not per spectrum**, so you must aggregate the evidence from all of a molecule's spectra into one ranked list.  
+
+### Files
+- train.parquet -- ~2.5m MS/MS spectra covering ~275k unique structures, with the structure given. One row per spectrum.
+- test.parquet -- the spectra to identify. One row per spectrum; the structure is not given.
+**Note**: the file you see is comprised of examples from the training dataset; it will be replaced by the hidden test set during re-run, and will be approximately the same size.
+- sample_submission.csv -- a valid submission in the correct format.
+
+### Test set
+~1,500 spectra of ~400 molecules, 1-16 spectra per molecule (median 3), all acquired on a Bruker timsTOF. Monoisotopic masses range from 157 to 1,159 Da (median 348).  
+
+Every scored molecule falls into one of three novelty classes, in order of increasing difficulty:  
+|Class|Definition|
+|---|---|
+|1 -- in public spectral libraries|The structure has publicly available reference MS/MS spectra, so it may be found by similarity to the training spectra.|
+|2 -- known structure, no public spectra|No public spectra exist for this molecule, but the structure is in PubChem or the natural-products database COCONUT, so it is reachable by database retrieval.|
+|3 -- novel structure|The structure is not in PubChem at all and must be predicted de novo.|
+To mimic a real complex mixture, the distribution over clauses -- and which molecule belongs to which class -- is hidden for the duration of the competition.  
+
+The test spectra have had only minimal cleaning applied, because there is no standard way to curate mass spectra and we would rather not discard information on your behalf:
+
+- Spectra whose measured precursor mass was inconsistent with the known structure and adduct were dropped.
+- Spectra whose base peak was below 1,000 raw counts were dropped as likely noise.
+- Peaks above precursor + 2 Da were removed -- a fragment cannot outweigh its singly-charged precursor.
+
+Test spectra use one of ten adducts: `[M+H]+`, `[M+NH4]+`, `[M-H2O+H]+`, `[M-2H2O+H]+`, `[M+Na]+`, `[M+K]+`, `[M-H]-`, `[M-H2O-H]-`, `[M+CH2O2-H]-`, `[M+Cl]-`. The training set contains many more.
+
+### Columns
