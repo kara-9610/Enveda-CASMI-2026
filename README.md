@@ -2,10 +2,6 @@
 
 ## Index
 - [Overview](#overview)
-  - [Purpose](#purpose)
-  - [Description](#description)
-  - [Background](#background)
-  - [Evaluation](#evaluation)
 - [Timeline](#timeline)
 - [Dataset Description](#dataset-description)
 
@@ -104,8 +100,32 @@ Test spectra use one of ten adducts: `[M+H]+`, `[M+NH4]+`, `[M-H2O+H]+`, `[M-2H2
 ### Columns
 Peak lists are stored as two aligned arrays: the i-th m/z pairs with the i-th intensity, with intensities normalised per spectrum so the largest peak equals 1.0. `train.parquet` and `test.parquet` use identical names for the shared columns, so preprocessing code ports directly.
 
+**test.parquet (12 columns)**
+
 |Column|Description|
 |---|---|
 |`molecule_id`|Anonymous compound identifier. Predictions are made per `molecule_id`.|
 |`spectrum_id`|Unique identifier for each spectrum.|
-|
+|`ms2_mzs`|Array of fragment m/z values.|
+|`ms2_normalized_intensities`|Aligned array of fragment intensities; base peak = 1.0|
+|`base_peak_intensity`|Raw intensity of the largest peak before normalisation. More intense spectra usually contain less noise.|
+|`adduct`|Precursor adduct, one of the seven above.|
+|`ionization_mode`|`positive` or `negative`.|
+|`instrument_type`|Always `timsTOF` -- all test spectra share one platform.|
+|`precursor_mz`|Measured precursor m/z.|
+|`collision_energy_ev`|Collision energy in electron volts, as a list. A single value ([20]) is one acquisition; several ([20, 40, 60, 80]) means the spectrum is merged form acquisition at different energies.|
+|`collision_energy_orig`|The collision energy as originally recorded.|
+|`collision_energy_orig_units`|Always eV in the test set.|
+
+**train.parquet (18 columns)**
+The test columns above plus:
+
+|Column|Description|
+|---|---|
+|`normalized_smiles`|**The label**. The structure as an RDKit-standardised SMILES string.|
+|`inchikey` / `inchikey14`|InChIKey of the structure and its first block, which identifies the 2D skeleton independent of stereochemistry.|
+|`molecular_formula`|Formula of the neutral structure.|
+|`ingest_lib`|Source library (see below).|
+|`adduct_orig`|The adduct string as recorded by the source, before standardisation.|
+|`precursor_error_ppm`|ppm error between the measured precursor m/z and the value implied by the labelled structure and adduct. Ships uncleaned, so it doubles as a label-quality signal.|
+|`num_peaks`|Number of fragment peaks.|
