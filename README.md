@@ -102,3 +102,10 @@ The test spectra have had only minimal cleaning applied, because there is no sta
 Test spectra use one of ten adducts: `[M+H]+`, `[M+NH4]+`, `[M-H2O+H]+`, `[M-2H2O+H]+`, `[M+Na]+`, `[M+K]+`, `[M-H]-`, `[M-H2O-H]-`, `[M+CH2O2-H]-`, `[M+Cl]-`. The training set contains many more.
 
 ### Columns
+Peak lists are stored as two aligned arrays: the i-th m/z pairs with the i-th intensity, with intensities normalised per spectrum so the largest peak equals 1.0. `train.parquet` and `test.parquet` use identical names for the shared columns, so preprocessing code ports directly.
+
+|Column|Description|
+|---|---|
+|`molecule_id`|Anonymous compound identifier. Predictions are made per `molecule_id`.|
+|`spectrum_id`|Unique identifier for each spectrum.|
+|
