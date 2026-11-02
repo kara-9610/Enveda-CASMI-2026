@@ -129,3 +129,55 @@ The test columns above plus:
 |`adduct_orig`|The adduct string as recorded by the source, before standardisation.|
 |`precursor_error_ppm`|ppm error between the measured precursor m/z and the value implied by the labelled structure and adduct. Ships uncleaned, so it doubles as a label-quality signal.|
 |`num_peaks`|Number of fragment peaks.|
+*Note*: `instrument_type` in train is free text as recorded by each source (dozens of distinct strings, null where the source recorded none), and `base_peak_intensity` is null for libraries that shipped pre-normalised intensities. Only `enveda-180` and `enveda-np-examples` are uniformly labelled `timsTOF`, matching the test file.
+
+### Training set
+The training set is largely a convenience aggregation of publicly available data. You may also use any freely and publicly available external data.
+
+Three things to understand before you use it:  
+- **Each library had different upstream preprocessing**.
+Different machines, different collision-energy units and conventions, free-text instrument descriptions, varying m/z precision.
+- **Compounds overlap across libraries**.
+Exact duplicate spectra were removed -- each spectrum appears once, credited to its primary source -- but the same compound measured independently by several libraries remains.
+
+|`ingest_lib`|Spectra|Unique structures||
+|---|---|---|---|
+|`enveda-180`|1,153,785|182,941|Enveda's published dataset, acquired on the same Bruker timsTOF as the test set. Consistent and instrument-matched, but the chemistry is synthetic drug-like screening compounds, a different region of chemical space from the test molecules.|
+|`pluskal_ms2`|527,581|46,821|MSnLib from the Pluskal lab: Orbitrap spectra of commercial screening and bioactive-compound libraries, one consistent protocol at multiple collision energies.|
+|`riken`|347,171|15,892|RIKEN's public libraries, strong focus on plant specialised metabolites.|
+|`gnps`|220,849|45,750|The GNPS community libraries, the largest public collection of natural-product reference spectra -- and the most heterogeneous, being community-contributed.|
+`massbank`|101,727|9,180|MassBank, a curated consortium library aggregating many labs and instrument types.|
+|`mona`|92,416|11,681|MassBank of North America, community-hosted, maintained by the Fiehn Lab at UC Davis.|
+|`spectraverse`|50,933|9,631|A recent harmonised aggregation of public libraries, including obscure ones absent from other aggregations.|
+|`msdial`|40,765|9,127|Public collections distributed with the MS-DIAL software, including multi-instrument libraries.|
+|`drug_plus`|2,545|2,539|A pharmaceutical LC-MS/MS database: ~2,500 drug substances, roughly one spectrum each, no collision-energy metadata.|
+|`enveda-np-examples`|1,151|250|**The closest library to the test set**. 250 common natural products gathered on the same instruments and processed through the same pipeline as the test spectra, released to help you build a domain-adapted pipeline. The compounds are deliberately common and appear in other libraries too, so you can compare.|
+|`masaryk`|652|416|A small library of chemical standards from RECETOX (Masaryk University).|
+Structure counts sum to more than 275,810 because compounds recur across libraries.
+
+### Collision energy
+Collision energy governs how completely a molecule fragments: higher energy means more fragmentation and smaller fragments on average. Instruments report it differently -- absolute electron volts (eV, beam-type instruments), normalised collision energy (NCE, a Thermo percentage scale), occasionally raw voltages, and often nothing at all. eV and NCE are different quantities on different scales, so the training set carries three columns:
+
+- `collision_energy_orig` -- the value exactly as the source recorded it, lossless, as a string: `40`, `[20 40 60]`, `35HCD`, `6V`. A multi-value entry means several single-energy acquisitions were merged into one spectrum.
+- `collision_energy_orig_units` -- `eV`, `NCE`, `V`, or `unknown`. Assigned from the declared string, then from documented library conventions (MSnLib is NCE, confirmed by its authors; Enveda-180 is eV), then from the instrument's analyser family.
+- `collision_energy_ev` -- our best-effort conversion to eV, matching the test file's convention. NCE is converted with the nominal Thermo formula (NCE x precursor_mz / 500 x charge factor), which is approximate because the true conversion depends on instrument tuning. Null where the unit is unresolved.
+
+**If your model consumes collision energy, use `collision_energy_ev`** -- it is the column designed to line up with the test set.
+
+### Common curation methods
+None of these is required and the best settings are yours to find, but they are common:
+
+- **Relative-intensity floor**. Drop peaks below a threshold relative to the base peak: 2%. 1% and 0.1% are common. Very low peaks are often instrument noise.
+- **Drop peaks above the precursor m/z**. A fragment cannot be heavier than the ion it came from, so peaks above the precursor (plus 1-2 Da for isotopes) are co-isolated contaminants or noise.
+- **Minimum peak count**. Spectra with a handful of peaks carry little structural information; many pipelines drop those with fewer than ~5-6.
+- **Maximum peak count**. Peak counts are heavy-tailed and some spectra have thousands. Keeping the top-N most intense (e.g. N=128) after the filters above is common. A classic library-search variant keeps the top ~6 peaks per 50 Da window, which preserves low-mass fragments a global top-N would discard.
+- **Deisotoping**. Each real fragment can be accompanied by a carbon-13 companion ~1.0033 Da above it; these are sometimes removed so each fragment is represented once.
+- **Intensity transforms**. Square-root or log scaling is common, since raw intensities span orders of magnitude and the largest peaks otherwise dominate any loss or similarity.
+
+### Other resources
+- **MIST-CF** and **SIRIUS** -- learned and rule-based molecular-formula annotation from MS/MS. Predicting the molecular formula first and conditioning on it is a common method for narrowing down the search space of possible structures.
+- **[matchms](https://github.com/matchms/matchms)** -- an open library for working with mass spectra: cleaning, curation, and similarity.
+- **GNPS propagated ("suspect") annotations** -- structures transferred to unidentified spectra via spectral-network similarity. Excluded from `train.parquet` because the labels are inferred rather than measured.
+- **[MassIVE](https://massive.ucsd.edu/ProteoSAFe/static/massive.jsp?redirect=auth)** -- the community repository of raw metabolomics runs: billions of unannotated MS/MS spectra. No structure labels, but a natural corpus for self-supervised pretraining.
+- **[GeMS](https://hyper.ai/en/datasets/39923) and [DreaMS](https://zenodo.org/records/10997887)** -- the DreaMS project released GeMS, a large curated corpus of unannotated spectra mined from MassIVE, plus pretrained spectrum-embedding models. A shortcut to repository-scale pretraining.
+- **[FragHub](https://github.com/eMetaboHUB/FragHub)** -- an open data repository that merges and harmonises the major open MS/MS libraries. Overlaps heavily with `train.parquet` but may contain some additional spectra either experimental or predicted.
