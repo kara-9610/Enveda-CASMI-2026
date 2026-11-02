@@ -129,6 +129,7 @@ The test columns above plus:
 |`adduct_orig`|The adduct string as recorded by the source, before standardisation.|
 |`precursor_error_ppm`|ppm error between the measured precursor m/z and the value implied by the labelled structure and adduct. Ships uncleaned, so it doubles as a label-quality signal.|
 |`num_peaks`|Number of fragment peaks.|
+
 *Note*: `instrument_type` in train is free text as recorded by each source (dozens of distinct strings, null where the source recorded none), and `base_peak_intensity` is null for libraries that shipped pre-normalised intensities. Only `enveda-180` and `enveda-np-examples` are uniformly labelled `timsTOF`, matching the test file.
 
 ### Training set
@@ -153,6 +154,7 @@ Exact duplicate spectra were removed -- each spectrum appears once, credited to 
 |`drug_plus`|2,545|2,539|A pharmaceutical LC-MS/MS database: ~2,500 drug substances, roughly one spectrum each, no collision-energy metadata.|
 |`enveda-np-examples`|1,151|250|**The closest library to the test set**. 250 common natural products gathered on the same instruments and processed through the same pipeline as the test spectra, released to help you build a domain-adapted pipeline. The compounds are deliberately common and appear in other libraries too, so you can compare.|
 |`masaryk`|652|416|A small library of chemical standards from RECETOX (Masaryk University).|
+
 Structure counts sum to more than 275,810 because compounds recur across libraries.
 
 ### Collision energy
