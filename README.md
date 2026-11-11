@@ -4,6 +4,7 @@
 - [Overview](#overview)
 - [Timeline](#timeline)
 - [Dataset Description](#dataset-description)
+- [Log](#log)
 
 ## Overview
 
@@ -183,3 +184,18 @@ None of these is required and the best settings are yours to find, but they are 
 - **[MassIVE](https://massive.ucsd.edu/ProteoSAFe/static/massive.jsp?redirect=auth)** -- the community repository of raw metabolomics runs: billions of unannotated MS/MS spectra. No structure labels, but a natural corpus for self-supervised pretraining.
 - **[GeMS](https://hyper.ai/en/datasets/39923) and [DreaMS](https://zenodo.org/records/10997887)** -- the DreaMS project released GeMS, a large curated corpus of unannotated spectra mined from MassIVE, plus pretrained spectrum-embedding models. A shortcut to repository-scale pretraining.
 - **[FragHub](https://github.com/eMetaboHUB/FragHub)** -- an open data repository that merges and harmonises the major open MS/MS libraries. Overlaps heavily with `train.parquet` but may contain some additional spectra either experimental or predicted.
+
+
+## Log
+
+### 20261110
+Join!  
+Create EDA notebook.
+Similar to the test data, the training data also contains the most structures in timsTOF and enveda-180.  
+Then, the following hypothesis could be formulated:  
+- Spectra obtained under similar measurement conditions are more effective for identifying candidate molecules,
+- Molecules with similar precursor masses are more promising candidates.
+- The similarity of MS/MS spectra is useful for structural identification.
+- Integrating multiple spectra of the same molecule improves prediction accuracy.
+
+It seems best to start by building a simple mass-based search model.
